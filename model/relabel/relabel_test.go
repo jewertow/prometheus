@@ -413,7 +413,7 @@ func TestRelabel(t *testing.T) {
 				},
 				{
 					SourceLabels: model.LabelNames{"__meta_kubernetes_pod_ip"},
-					Regex:        MustNewRegexp("(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.|$)){4})"),
+					Regex:        MustNewRegexp("((([0-9]+?)(\\.|$)){4})"),
 					Action:       Replace,
 					Replacement:  "$1",
 					TargetLabel:  "__address__",
@@ -446,7 +446,7 @@ func TestRelabel(t *testing.T) {
 				},
 				{
 					SourceLabels: model.LabelNames{"__meta_kubernetes_pod_ip"},
-					Regex:        MustNewRegexp("(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.|$)){4})"),
+					Regex:        MustNewRegexp("((([0-9]+?)(\\.|$)){4})"),
 					Action:       Replace,
 					Replacement:  "$1",
 					TargetLabel:  "__address__",
