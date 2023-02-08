@@ -397,6 +397,72 @@ func TestRelabel(t *testing.T) {
 				"foo":              "bar",
 			}),
 		},
+		{ // dual-stack parsing - IPv6 expected
+			input: labels.FromMap(map[string]string{
+				"__meta_kubernetes_pod_ip":                            "fd00:10:128:3::111",
+				"__meta_kubernetes_pod_annotation_prometheus_io_port": "15020",
+				"__address__": "[fd00:10:128:3::111]:8080",
+			}),
+			relabel: []*Config{
+				{
+					SourceLabels: model.LabelNames{"__meta_kubernetes_pod_ip"},
+					Regex:        MustNewRegexp("(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"),
+					Action:       Replace,
+					Replacement:  "[$1]",
+					TargetLabel:  "__address__",
+				},
+				{
+					SourceLabels: model.LabelNames{"__meta_kubernetes_pod_ip"},
+					Regex:        MustNewRegexp("(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.|$)){4})"),
+					Action:       Replace,
+					Replacement:  "$1",
+					TargetLabel:  "__address__",
+				},
+				{
+					SourceLabels: model.LabelNames{"__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"},
+					Separator:    ":",
+					TargetLabel:  "__address__",
+				},
+			},
+			output: labels.FromMap(map[string]string{
+				"__meta_kubernetes_pod_ip":                            "fd00:10:128:3::111",
+				"__meta_kubernetes_pod_annotation_prometheus_io_port": "15020",
+				"__address__": "[fd00:10:128:3::111]:15020",
+			}),
+		},
+		{ // dual-stack parsing - IPv4 expected
+			input: labels.FromMap(map[string]string{
+				"__meta_kubernetes_pod_ip":                            "192.168.56.10",
+				"__meta_kubernetes_pod_annotation_prometheus_io_port": "15020",
+				"__address__": "192.168.56.10:8080",
+			}),
+			relabel: []*Config{
+				{
+					SourceLabels: model.LabelNames{"__meta_kubernetes_pod_ip"},
+					Regex:        MustNewRegexp("(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"),
+					Action:       Replace,
+					Replacement:  "[$1]",
+					TargetLabel:  "__address__",
+				},
+				{
+					SourceLabels: model.LabelNames{"__meta_kubernetes_pod_ip"},
+					Regex:        MustNewRegexp("(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.|$)){4})"),
+					Action:       Replace,
+					Replacement:  "$1",
+					TargetLabel:  "__address__",
+				},
+				{
+					SourceLabels: model.LabelNames{"__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"},
+					Separator:    ":",
+					TargetLabel:  "__address__",
+				},
+			},
+			output: labels.FromMap(map[string]string{
+				"__meta_kubernetes_pod_ip":                            "192.168.56.10",
+				"__meta_kubernetes_pod_annotation_prometheus_io_port": "15020",
+				"__address__": "192.168.56.10:15020",
+			}),
+		},
 		{
 			input: labels.FromMap(map[string]string{
 				"a":  "foo",
