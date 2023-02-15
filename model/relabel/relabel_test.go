@@ -397,6 +397,24 @@ func TestRelabel(t *testing.T) {
 				"foo":              "bar",
 			}),
 		},
+		{ // extracting revision
+			input: labels.FromMap(map[string]string{
+				"__meta_kubernetes_pod_annotation_sidecar_istio_io_status": "{\"initContainers\":[\"istio-init\"],\"revision\":\"1-16-0\"}",
+			}),
+			relabel: []*Config{
+				{
+					SourceLabels: model.LabelNames{"__meta_kubernetes_pod_annotation_sidecar_istio_io_status"},
+					Action:       Replace,
+					Regex:        MustNewRegexp(`.*[revision]\":\"([^\"]+).*`),
+					Replacement:  "$1",
+					TargetLabel:  "revision",
+				},
+			},
+			output: labels.FromMap(map[string]string{
+				"__meta_kubernetes_pod_annotation_sidecar_istio_io_status": "{\"initContainers\":[\"istio-init\"],\"revision\":\"1-16-0\"}",
+				"revision": "1-16-0",
+			}),
+		},
 		{ // dual-stack parsing - IPv6 expected
 			input: labels.FromMap(map[string]string{
 				"__meta_kubernetes_pod_ip":                            "fd00:10:128:3::111",
